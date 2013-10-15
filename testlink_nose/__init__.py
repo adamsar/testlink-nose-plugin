@@ -25,7 +25,9 @@ def testlink_task(_id, project_name = None, plan_name = None):
     return test
 
 class TestlinkPlugin(Plugin):
-
+    name = 'testlink'
+    enabled = True
+    
     def options(self, parser, env):
         """
         Add API key/value to the parser
@@ -77,17 +79,17 @@ class TestlinkPlugin(Plugin):
         Generate the classes' access to the API
         via the options
         """
-        self.api = TestLinkClient
+        self.api = TestLinkClient(options.testlink_endpoint, options.testlink_key)
         self.project_name = options.project_name
         self.plan_name = options.plan_name
         self.build_name = options.build_name
         self.platform_name = options.platform_name
+        self.plan = self.api.projects.get(self.project_name).plans.get(name=self.plan_name)
         
         #Make the build if it isn't specified
         if not self.build_name:
             build_name = "Build-{}".format(current_date_string())
-            self.api.projects.get(self.project_name).builds.create(build_name,
-                                                                   notes="Automated by nose")
+            self.plan.builds.create(build_name, notes="Automated by nose")
 
     def _set_execution_result(self, test, status, notes=None):
         """
@@ -101,11 +103,15 @@ class TestlinkPlugin(Plugin):
             params['notes'] = notes
         if self.build_name:
             params['build_name'] = self.build_name
-            
+
         #First get the test
         project_name = getattr(test, 'project_name', None) or self.project_name
-        plan_name = getattr(test, 'plan_name', None) or self.plan_name
-        test = self.api.projects.get(project_name).plans.get(name=plan_name).cases.get(external_id=test.testlink_id)
+        plan_name = getattr(test, 'plan_name', None)
+        if plan_name:
+            plan = self.api.projects.get(project_name).plans.get(name=plan_name)
+        else:
+            plan = self.plan
+        test = plan.cases.get(external_id=test.testlink_id)
         test.report(status,  **params)
         
         
@@ -113,29 +119,19 @@ class TestlinkPlugin(Plugin):
         """
         Updates the test case as successful
         """
-        try:
-            self._set_execution_result(test, status.PASSED)
-        except:
-            #Do nothing
-            pass
+        self._set_execution_result(test, status.PASSED)
                                    
         
     def addError(self, test, err):
         """
         Updates the test as failed
         """
-        try:
-            self._set_execution_result(test, status.FAILED)
-        except:
-            #Do nothing for now
-            pass
+        self._set_execution_result(test, status.FAILED)
+
 
     def addFailure(self, test, err):
         """
         Updates the test as failed
         """
-        try:
-            self._set_execution_result(test, status.FAILED)
-        except:
-            #Do nothing for now
-            pass
+        self._set_execution_result(test, status.FAILED)
+
