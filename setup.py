@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 try:
     README = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
@@ -18,7 +18,7 @@ requires = [
 setup(
     name='testlink-nose',
     version='0.1',
-    packages=['testlink_nose'],
+    packages=find_packages(),
     include_package_data=True,
     license='BSD License',  # example license
     description="""
@@ -33,13 +33,10 @@ setup(
     dependency_links = ['https://github.com/adamsar/testlink-python-api/tarball/master#egg=testlink-python-api-0.1'],
     classifiers=[
         'Environment :: Web Environment',
-        'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License', # example license
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        
-        # replace these appropriately if you are using Python 
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
