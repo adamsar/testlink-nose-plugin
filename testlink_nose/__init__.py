@@ -5,6 +5,9 @@ from testlink.common import status
 from functools import wraps
 from datetime import datetime
 
+import logging
+
+log = logging.getLogger(__name__)
 TESTLINK_ATTRS = ['testlink_id', 'project_name', 'plan_name']
 TEST_QUEUE = []
 
@@ -43,9 +46,7 @@ class TestlinkPlugin(Plugin):
     enabled = True
     
     def options(self, parser, env):
-        """
-        Add API key/value to the parser
-        """
+        """Add API key/value to the parser"""
         Plugin.options(self, parser, env)
         parser.add_option(
             "--testlink-endpoint", action="store",
@@ -87,19 +88,36 @@ class TestlinkPlugin(Plugin):
             """
             )
 
+    def valid(self, options):
+        """
+        Checks to see if the passed in options are
+        valid for syncing with testlink
+        """
+        requirements = ['project_name', 'plan_name',
+                        'testlink_endpoint', 'testlink_key',
+                        'platform_name']
+        return reduce(lambda a, b: a and b,
+                      map (lambda x: getattr(options, x),
+                           requirements
+                           )
+                        )
+    
         
     def configure(self, options, config):
         """
         Generate the classes' access to the API
         via the options
         """
+        if not self.valid(options):
+            log.warning("Testlink nose plugin is not configured properly")
+            return
         self.api = TestLinkClient(options.testlink_endpoint, options.testlink_key)
         self.project_name = options.project_name
         self.plan_name = options.plan_name
         self.build_name = options.build_name
         self.platform_name = options.platform_name
         self.plan = self.api.projects.get(self.project_name).plans.get(name=self.plan_name)
-        
+
         #Make the build if it isn't specified
         if not self.build_name:
             self.build_name = "Build-{}".format(current_date_string())
