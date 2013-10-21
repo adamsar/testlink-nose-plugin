@@ -18,7 +18,7 @@ requires = [
 setup(
     name='testlink-nose',
     version='0.1',
-    packages=[],
+    packages=['testlink_nose'],
     include_package_data=True,
     license='BSD License',  # example license
     description="""

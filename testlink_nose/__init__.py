@@ -2,11 +2,19 @@ from nose.plugins.base import Plugin
 from testlink import TestLinkClient
 from testlink.common import status
 
-from datetime import datetime
 from functools import wraps
+from datetime import datetime
+
+TESTLINK_ATTRS = ['testlink_id', 'project_name', 'plan_name']
+TEST_QUEUE = []
 
 def current_date_string():
+    """
+    Get the current date as a string. Used for
+    making a new build which this plugin runs
+    """
     return datetime.utcnow().strftime("%Y-%m-%dt%H:%M:%S")
+
 
 def testlink_task(_id, project_name = None, plan_name = None):
     """
@@ -16,13 +24,19 @@ def testlink_task(_id, project_name = None, plan_name = None):
     def test(fn):
         @wraps(fn)
         def innerdef(*args, **kwargs):
-            self = args[0]
-            self.testlink_id = _id
-            self.project_name = project_name
-            self.plan_name = plan_name
+            
+            #Keep a top level queue of attributes,
+            #must be popped when accessed
+            TEST_QUEUE.append({
+                'testlink_id': _id,
+                'project_name': project_name,
+                'plan_name': plan_name
+                })
+            
             return fn(*args, **kwargs)
         return innerdef
     return test
+
 
 class TestlinkPlugin(Plugin):
     name = 'testlink'
@@ -88,34 +102,38 @@ class TestlinkPlugin(Plugin):
         
         #Make the build if it isn't specified
         if not self.build_name:
-            build_name = "Build-{}".format(current_date_string())
-            self.plan.builds.create(build_name, notes="Automated by nose")
-
+            self.build_name = "Build-{}".format(current_date_string())
+            self.plan.builds.create(self.build_name, notes="Automated by nose")
+            
+                        
     def _set_execution_result(self, test, status, notes=None):
         """
         Sets the execution result of the test to status
         """
-        if not getattr(test, 'testlink_id', None):
+        if not len(TEST_QUEUE):
+            #Was not specified
             return
-
-        params = {}
+        
+        params = {
+            'build_name': self.build_name,
+            'overwrite': False
+            }
+        test_settings = TEST_QUEUE.pop()        
         if notes:
             params['notes'] = notes
-        if self.build_name:
-            params['build_name'] = self.build_name
 
         #First get the test
-        project_name = getattr(test, 'project_name', None) or self.project_name
-        plan_name = getattr(test, 'plan_name', None)
+        project_name = test_settings.get('project_name', None) or self.project_name
+        plan_name = test_settings.get('plan_name', None)
         if plan_name:
             plan = self.api.projects.get(project_name).plans.get(name=plan_name)
         else:
             plan = self.plan
-        test = plan.cases.get(external_id=test.testlink_id)
-        test.report(status,  **params)
+        test = plan.cases.get(external_id=test_settings.get('testlink_id'))
+        return test.report(status,  **params)
         
         
-    def addSuccess(self, test):
+    def addSuccess(self, test, capt):
         """
         Updates the test case as successful
         """
