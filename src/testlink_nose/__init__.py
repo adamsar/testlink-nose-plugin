@@ -81,6 +81,10 @@ class TestlinkPlugin(Plugin):
             """
             )
         parser.add_option(
+            '--generate-build', action='store_true',
+            dest='generate_build', default=False
+            )
+        parser.add_option(
             "--platform-name", action="store",
             dest="platform_name", default=None,
             help="""
@@ -113,10 +117,14 @@ class TestlinkPlugin(Plugin):
         self.plan = self.api.projects.get(self.project_name).plans.get(name=self.plan_name)
 
         #Make the build if it isn't specified
-        if not self.build_name:
+        if options.generate_build:
             self.build_name = "Build-{}".format(current_date_string())
             self.plan.builds.create(self.build_name, notes="Automated by nose")
-        self.build_id = self.plan.builds.get(name=self.build_name).id
+            
+        if self.build_name:
+            self.build_id = self.plan.builds.get(name=self.build_name).id
+        else:
+            self.build_id = None
             
                         
     def _set_execution_result(self, test, status, notes=None):
@@ -124,15 +132,21 @@ class TestlinkPlugin(Plugin):
         Sets the execution result of the test to status
         """
         if not self.valid or not len(TEST_QUEUE):
-            #Was not specified
+            file('not_valid', 'w').write("not valid")
             return
         
         params = {
-            'build_id': self.build_id,
-            'overwrite': True,
-            'platform_name': self.platform_name
+            'overwrite': True
             }
-        test_settings = TEST_QUEUE.pop()        
+
+        if self.platform_name:
+            params['platform_name'] = self.platform_name
+        if self.build_id:
+            params['build_id'] = self.build_id
+        else:
+            params['guess'] = True
+        
+        test_settings = TEST_QUEUE.pop()
         if notes:
             params['notes'] = notes
 
