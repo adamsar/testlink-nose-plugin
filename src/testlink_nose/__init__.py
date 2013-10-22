@@ -143,7 +143,7 @@ class TestlinkPlugin(Plugin):
             return
         
         params = {
-            'overwrite': True
+            'overwrite': self.overwrite
             }
 
         if self.platform_name:
