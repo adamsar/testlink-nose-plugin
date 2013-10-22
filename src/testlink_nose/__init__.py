@@ -88,27 +88,21 @@ class TestlinkPlugin(Plugin):
             """
             )
 
-    def valid(self, options):
-        """
-        Checks to see if the passed in options are
-        valid for syncing with testlink
-        """
-        requirements = ['project_name', 'plan_name',
-                        'testlink_endpoint', 'testlink_key',
-                        'platform_name']
-        return reduce(lambda a, b: a and b,
-                      map (lambda x: getattr(options, x),
-                           requirements
-                           )
-                        )
-    
         
     def configure(self, options, config):
         """
         Generate the classes' access to the API
         via the options
         """
-        if not self.valid(options):
+        requirements = ['project_name', 'plan_name',
+                        'testlink_endpoint', 'testlink_key',
+                        'platform_name']
+        self.valid = reduce(lambda a, b: a and b,
+                      map (lambda x: getattr(options, x),
+                           requirements
+                           )
+                        )        
+        if not self.valid:
             log.warning("Testlink nose plugin is not configured properly")
             return
         self.api = TestLinkClient(options.testlink_endpoint, options.testlink_key)
@@ -128,7 +122,7 @@ class TestlinkPlugin(Plugin):
         """
         Sets the execution result of the test to status
         """
-        if not len(TEST_QUEUE):
+        if not self.valid or not len(TEST_QUEUE):
             #Was not specified
             return
         
