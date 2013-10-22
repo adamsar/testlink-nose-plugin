@@ -105,9 +105,6 @@ class TestlinkPlugin(Plugin):
         requirements = ['project_name', 'plan_name',
                         'testlink_endpoint', 'testlink_key',
                         'platform_name']
-        for requirement in requirements:
-            if not bool(getattr(options, requirement)):
-                file('requirement_fail_{}'.format(requirement), 'w').write("true")
                 
         self.valid = reduce(lambda a, b: a and b,
                       map (lambda x: bool(getattr(options, x)),
@@ -135,7 +132,7 @@ class TestlinkPlugin(Plugin):
         if self.build_name:
             self.build_id = self.plan.builds.get(name=self.build_name).id
         else:
-            self.build_id = None
+            self.build_id = self.plan.builds.latest().id
             
                         
     def _set_execution_result(self, test, status, notes=None):
@@ -143,7 +140,6 @@ class TestlinkPlugin(Plugin):
         Sets the execution result of the test to status
         """
         if not self.valid or not len(TEST_QUEUE):
-            file('not_valid', 'w').write("not valid")
             return
         
         params = {
