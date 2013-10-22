@@ -145,21 +145,21 @@ class TestlinkPlugin(Plugin):
         return test.report(status,  **params)
         
         
-    def addSuccess(self, test, capt):
+    def addSuccess(self, test, capt=None):
         """
         Updates the test case as successful
         """
         self._set_execution_result(test, status.PASSED)
                                    
         
-    def addError(self, test, err):
+    def addError(self, test, err, capt=None):
         """
         Updates the test as failed
         """
         self._set_execution_result(test, status.FAILED)
 
 
-    def addFailure(self, test, err):
+    def addFailure(self, test, err, capt=None):
         """
         Updates the test as failed
         """
