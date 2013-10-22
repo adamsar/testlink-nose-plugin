@@ -129,7 +129,8 @@ class TestlinkPlugin(Plugin):
         
         params = {
             'build_id': self.build_id,
-            'overwrite': False
+            'overwrite': True,
+            'platform_name': self.platform_name
             }
         test_settings = TEST_QUEUE.pop()        
         if notes:
