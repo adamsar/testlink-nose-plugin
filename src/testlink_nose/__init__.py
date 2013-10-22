@@ -116,6 +116,7 @@ class TestlinkPlugin(Plugin):
         if not self.build_name:
             self.build_name = "Build-{}".format(current_date_string())
             self.plan.builds.create(self.build_name, notes="Automated by nose")
+        self.build_id = self.plan.builds.get(name=self.build_name).id
             
                         
     def _set_execution_result(self, test, status, notes=None):
@@ -127,7 +128,7 @@ class TestlinkPlugin(Plugin):
             return
         
         params = {
-            'build_name': self.build_name,
+            'build_id': self.build_id,
             'overwrite': False
             }
         test_settings = TEST_QUEUE.pop()        
