@@ -105,8 +105,12 @@ class TestlinkPlugin(Plugin):
         requirements = ['project_name', 'plan_name',
                         'testlink_endpoint', 'testlink_key',
                         'platform_name']
+        for requirement in requirements:
+            if not bool(getattr(options, requirement)):
+                file('requirement_fail_{}'.format(requirement), 'w').write("true")
+                
         self.valid = reduce(lambda a, b: a and b,
-                      map (lambda x: getattr(options, x),
+                      map (lambda x: bool(getattr(options, x)),
                            requirements
                            )
                         )        
