@@ -85,6 +85,10 @@ class TestlinkPlugin(Plugin):
             dest='generate_build', default=False
             )
         parser.add_option(
+            '--overwrite', action='store_true',
+            dest='overwrite', default=False
+            )        
+        parser.add_option(
             "--platform-name", action="store",
             dest="platform_name", default=None,
             help="""
@@ -120,6 +124,9 @@ class TestlinkPlugin(Plugin):
         if options.generate_build:
             self.build_name = "Build-{}".format(current_date_string())
             self.plan.builds.create(self.build_name, notes="Automated by nose")
+            self.overwrite = False
+        else:
+            self.overwrite = options.overwrite
             
         if self.build_name:
             self.build_id = self.plan.builds.get(name=self.build_name).id
